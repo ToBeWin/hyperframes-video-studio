@@ -130,10 +130,21 @@ def _slug_words(value: str, limit: int = 16) -> list[str]:
     return words[:limit] or ["Video", "Studio"]
 
 
-def _extract_chinese_phrases(value: str, limit: int = 16) -> list[str]:
-    """Extract Chinese phrases (2+ characters) from text."""
-    phrases = re.findall(r"[一-鿿㐀-䶿]{2,}", value)
+def _extract_cjk_phrases(value: str, limit: int = 16) -> list[str]:
+    """Extract CJK (Chinese/Japanese/Korean) phrases from text."""
+    # Chinese: 一-鿿, Japanese Kanji: same range + 㐀-䶿
+    # Japanese Hiragana: ぀-ゟ, Katakana: ゠-ヿ
+    # Korean Hangul: 가-힯
+    phrases = re.findall(r"[一-鿿㐀-䶿぀-ゟ゠-ヿ가-힯]{2,}", value)
     return phrases[:limit]
+
+
+def _extract_non_latin_words(value: str, limit: int = 16) -> list[str]:
+    """Extract words from non-Latin scripts (Arabic, Hindi, Thai, etc.)."""
+    # Arabic: ؀-ۿ, Devanagari (Hindi): ऀ-ॿ, Thai: ฀-๿
+    # Cyrillic: Ѐ-ӿ, Greek: Ͱ-Ͽ
+    words = re.findall(r"[؀-ۿऀ-ॿ฀-๿Ѐ-ӿͰ-Ͽ]{2,}", value)
+    return words[:limit]
 
 
 def _clean_prompt_prefix(value: str) -> str:
@@ -142,16 +153,19 @@ def _clean_prompt_prefix(value: str) -> str:
 
 def _brief_sentences(value: str) -> list[str]:
     cleaned = re.sub(r"\s+", " ", value).strip()
-    # Split on Chinese and English sentence endings, semicolons, newlines
-    chunks = re.split(r"(?<=[.!?。！？；])\s*|[\n;；]+", cleaned)
+    # Split on sentence endings from all major languages
+    # English: . ! ?  Chinese: 。！？  Japanese: 。！？
+    # Arabic/Urdu: ؟  Hindi: ।  Korean: 。  General: ; ;
+    chunks = re.split(r"(?<=[.!?。！？؟।；])\s*|[\n;；]+", cleaned)
     sentences = [_clean_prompt_prefix(chunk.strip(" -")) for chunk in chunks if chunk.strip(" -")]
     sentences = [sentence for sentence in sentences if sentence and len(sentence) > 1]
     if len(sentences) >= 2:
         return sentences
-    # For single sentence or no sentence: try Chinese phrases first, then English words
-    chinese = _extract_chinese_phrases(cleaned, 20)
+    # For single sentence or no sentence: extract phrases from all supported scripts
+    cjk = _extract_cjk_phrases(cleaned, 20)
+    non_latin = _extract_non_latin_words(cleaned, 20)
     english = _slug_words(cleaned, 20)
-    all_words = chinese + english
+    all_words = cjk + non_latin + english
     if not all_words:
         return ["A clear story for the audience."]
     return [" ".join(all_words[index : index + 8]) for index in range(0, len(all_words), 8)]
@@ -256,21 +270,35 @@ def _frame_copy(frame: dict, project: dict, index: int) -> dict:
 
 def _extract_topic(brief: str) -> str:
     """Extract the main topic from a brief, removing style/duration instructions."""
-    # Remove style/technical keywords (English and Chinese)
-    cleaned = re.sub(r"(high[- ]?end|cinematic|professional|style|aspect|ratio|duration|seconds|fps|resolution|高清|电影感|专业|风格|时长|分辨率)[^.。]*[.。]", "", brief, flags=re.I)
-    cleaned = re.sub(r"\d+\s*[-–]?\s*\d*\s*(second|sec|minute|min|fps|秒|分钟)[^.。]*[.。]", "", cleaned, flags=re.I)
+    # Remove style/technical keywords (English, Chinese, Japanese, Korean)
+    style_pattern = (
+        r"(high[- ]?end|cinematic|professional|style|aspect|ratio|duration|seconds|fps|resolution"
+        r"|高清|电影感|专业|风格|时长|分辨率"
+        r"|シネマティック|プロフェッショナル|スタイル|解像度"
+        r"|시네마틱|프로페셔널|스타일|해상도)[^.。！？!？]*[.。！？!？]"
+    )
+    cleaned = re.sub(style_pattern, "", brief, flags=re.I)
+    time_pattern = r"\d+\s*[-–]?\s*\d*\s*(second|sec|minute|min|fps|秒|分钟|セカンド|ミニート|초|분)[^.。！？!？]*[.。！？!？]"
+    cleaned = re.sub(time_pattern, "", cleaned, flags=re.I)
     # Remove prompt prefixes
-    cleaned = re.sub(r"(video|theme|topic|title|subject|brief|视频|主题|标题)\s*[:：-]\s*", "", cleaned.strip(), flags=re.I)
-    cleaned = re.sub(r"^(create|make|build|generate|turn|制作|创建|生成)\s*", "", cleaned, flags=re.I)
+    prefix_pattern = (
+        r"(video|theme|topic|title|subject|brief|视频|主题|标题|動画|テーマ|タイトル|비디오|주제|제목)\s*[:：-]\s*"
+    )
+    cleaned = re.sub(prefix_pattern, "", cleaned.strip(), flags=re.I)
+    verb_pattern = r"^(create|make|build|generate|turn|制作|创建|生成|作成|構築|생성|만들기)\s*"
+    cleaned = re.sub(verb_pattern, "", cleaned, flags=re.I)
     # Remove sentences that are just instructions
-    cleaned = re.sub(r"[^.。!！?？]*[.。!！?？]", "", cleaned)
+    cleaned = re.sub(r"[^.。!！?？؟।]*[.。!！?？؟।]", "", cleaned)
     cleaned = re.sub(r"\s+", " ", cleaned).strip()
     if not cleaned:
         return ""
-    # Try Chinese phrases first, then English words
-    chinese = _extract_chinese_phrases(cleaned, 8)
-    if chinese:
-        return " ".join(chinese[:4])
+    # Try CJK phrases, then non-Latin words, then English words
+    cjk = _extract_cjk_phrases(cleaned, 8)
+    if cjk:
+        return " ".join(cjk[:4])
+    non_latin = _extract_non_latin_words(cleaned, 8)
+    if non_latin:
+        return " ".join(non_latin[:4])
     words = cleaned.split()
     return " ".join(words[:6]).strip(" .,:;")
 
