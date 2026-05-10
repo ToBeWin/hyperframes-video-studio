@@ -130,21 +130,31 @@ def _slug_words(value: str, limit: int = 16) -> list[str]:
     return words[:limit] or ["Video", "Studio"]
 
 
+def _extract_chinese_phrases(value: str, limit: int = 16) -> list[str]:
+    """Extract Chinese phrases (2+ characters) from text."""
+    phrases = re.findall(r"[一-鿿㐀-䶿]{2,}", value)
+    return phrases[:limit]
+
+
 def _clean_prompt_prefix(value: str) -> str:
     return re.sub(r"^(video\s+theme|theme|topic|title|subject|brief)\s*[:：-]\s*", "", value.strip(), flags=re.I)
 
 
 def _brief_sentences(value: str) -> list[str]:
     cleaned = re.sub(r"\s+", " ", value).strip()
-    chunks = re.split(r"(?<=[.!?。！？])\s+|[\n;；]+", cleaned)
+    # Split on Chinese and English sentence endings, semicolons, newlines
+    chunks = re.split(r"(?<=[.!?。！？；])\s*|[\n;；]+", cleaned)
     sentences = [_clean_prompt_prefix(chunk.strip(" -")) for chunk in chunks if chunk.strip(" -")]
-    sentences = [sentence for sentence in sentences if sentence]
+    sentences = [sentence for sentence in sentences if sentence and len(sentence) > 1]
     if len(sentences) >= 2:
         return sentences
-    words = _slug_words(cleaned, 80)
-    if not words:
+    # For single sentence or no sentence: try Chinese phrases first, then English words
+    chinese = _extract_chinese_phrases(cleaned, 20)
+    english = _slug_words(cleaned, 20)
+    all_words = chinese + english
+    if not all_words:
         return ["A clear story for the audience."]
-    return [" ".join(words[index : index + 10]) for index in range(0, len(words), 10)]
+    return [" ".join(all_words[index : index + 8]) for index in range(0, len(all_words), 8)]
 
 
 def _title_from_brief(value: str, fallback: str) -> str:
@@ -194,6 +204,11 @@ ROLE_HEADLINES = {
 }
 
 
+def _strip_sentence_endings(text: str) -> str:
+    """Remove trailing sentence punctuation from text."""
+    return re.sub(r"[.。!！?？;；:：,，\s]+$", "", text).strip()
+
+
 def _frame_copy(frame: dict, project: dict, index: int) -> dict:
     item = dict(frame)
     role = str(item.get("role") or "scene")
@@ -206,31 +221,31 @@ def _frame_copy(frame: dict, project: dict, index: int) -> dict:
         item["caption"] = item.get("caption") or fc.get("caption") or ""
         return item
 
-    # Priority 2: brief-driven content (improved extraction)
-    sentences = _brief_sentences(str(project.get("brief") or ""))
-    title = _title_from_brief(str(project.get("brief") or ""), str(project.get("template_name") or "Video"))
+    # Priority 2: brief-driven content with role-based fallback
+    brief = str(project.get("brief") or "")
+    sentences = _brief_sentences(brief)
+    title = _title_from_brief(brief, str(project.get("template_name") or "Video"))
+    topic = _extract_topic(brief)
 
-    # Headline: first frame gets the title; subsequent frames get brief sentences
+    # Headline: use brief content when available, role-based fallback otherwise
     if index == 0:
-        default_headline = title
-    elif index <= len(sentences) and index > 0:
-        # Use brief sentences as headlines for subsequent frames, capped at 8 words
-        sentence = sentences[index] if index < len(sentences) else sentences[-1]
+        default_headline = _strip_sentence_endings(title)
+    elif sentences:
+        # Cycle through sentences (handles more frames than sentences)
+        sentence = sentences[index % len(sentences)]
         words = sentence.split()
-        default_headline = " ".join(words[:8]).strip(" .,:;") or ROLE_HEADLINES.get(role, role.replace("_", " ").title())
+        candidate = _strip_sentence_endings(" ".join(words[:8]))
+        default_headline = candidate if len(candidate) > 3 else ROLE_HEADLINES.get(role, role.replace("_", " ").title())
     else:
         default_headline = ROLE_HEADLINES.get(role, role.replace("_", " ").title())
 
-    # Caption: distribute brief sentences across frames
-    if sentences:
-        if len(sentences) == 1:
-            # Single sentence: use it for all frames
-            caption_source = sentences[0]
-        elif index < len(sentences):
-            caption_source = sentences[index]
-        else:
-            # More frames than sentences: cycle through remaining sentences
-            caption_source = sentences[(index - 1) % len(sentences)]
+    # Caption: use brief content when available, role-based fallback otherwise
+    if sentences and len(sentences) > 1:
+        # Cycle through sentences for captions too
+        caption_source = sentences[index % len(sentences)]
+    elif topic:
+        # Single-topic brief: combine topic with role context
+        caption_source = f"{topic} — {ROLE_HEADLINES.get(role, 'Next step')}"
     else:
         caption_source = str(project.get("best_for") or "")
 
@@ -239,9 +254,44 @@ def _frame_copy(frame: dict, project: dict, index: int) -> dict:
     return item
 
 
+def _extract_topic(brief: str) -> str:
+    """Extract the main topic from a brief, removing style/duration instructions."""
+    # Remove style/technical keywords (English and Chinese)
+    cleaned = re.sub(r"(high[- ]?end|cinematic|professional|style|aspect|ratio|duration|seconds|fps|resolution|高清|电影感|专业|风格|时长|分辨率)[^.。]*[.。]", "", brief, flags=re.I)
+    cleaned = re.sub(r"\d+\s*[-–]?\s*\d*\s*(second|sec|minute|min|fps|秒|分钟)[^.。]*[.。]", "", cleaned, flags=re.I)
+    # Remove prompt prefixes
+    cleaned = re.sub(r"(video|theme|topic|title|subject|brief|视频|主题|标题)\s*[:：-]\s*", "", cleaned.strip(), flags=re.I)
+    cleaned = re.sub(r"^(create|make|build|generate|turn|制作|创建|生成)\s*", "", cleaned, flags=re.I)
+    # Remove sentences that are just instructions
+    cleaned = re.sub(r"[^.。!！?？]*[.。!！?？]", "", cleaned)
+    cleaned = re.sub(r"\s+", " ", cleaned).strip()
+    if not cleaned:
+        return ""
+    # Try Chinese phrases first, then English words
+    chinese = _extract_chinese_phrases(cleaned, 8)
+    if chinese:
+        return " ".join(chinese[:4])
+    words = cleaned.split()
+    return " ".join(words[:6]).strip(" .,:;")
+
+
+def _deduplicate_words(words: list[str]) -> list[str]:
+    seen: set[str] = set()
+    result: list[str] = []
+    for word in words:
+        key = word.lower().strip(".,:;!?")
+        if key not in seen and len(key) > 1:
+            seen.add(key)
+            result.append(word)
+    return result
+
+
 def _generated_visual(project: dict, frame: dict, index: int) -> str:
     template = str(project.get("template") or "")
-    words = _slug_words(str(frame.get("caption") or project.get("brief") or ""), 12)
+    raw_words = _slug_words(str(frame.get("caption") or project.get("brief") or ""), 12)
+    words = _deduplicate_words(raw_words)
+    if not words:
+        words = ["Video", "Studio"]
     label = _html_escape(frame.get("headline") or frame.get("role") or "Scene")
     chips = "".join(f"<span>{_html_escape(word)}</span>" for word in words[:5])
     number = f"{index + 1:02d}"
