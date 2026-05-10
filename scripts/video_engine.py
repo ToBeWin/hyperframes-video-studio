@@ -394,15 +394,292 @@ def _copy_render_assets(project: dict, html_dir: Path) -> tuple[list[dict], dict
     return copied, audio_info
 
 
+def _get_layout(template_key: str) -> str:
+    """Map template to layout type."""
+    layout_map = {
+        "product_launch": "split_full",
+        "feature_demo": "timeline_flow",
+        "data_story": "stats_grid",
+        "minimalist_quote": "hero_center",
+        "explainer": "step_flow",
+        "before_after": "testimonial_card",
+        "customer_testimonial": "testimonial_card",
+        "event_promo": "banner_announce",
+        "changelog": "timeline_flow",
+        "ecommerce_promo": "stats_grid",
+        "cinematic_hero": "hero_center",
+        "split_showcase": "split_full",
+        "step_by_step": "timeline_flow",
+        "metrics_dashboard": "stats_grid",
+        "social_card": "hero_center",
+        "announcement": "banner_announce",
+    }
+    return layout_map.get(template_key, "split_grid")
+
+
+def _layout_css(layout: str, width: int, height: int, font: str) -> str:
+    """Return layout-specific CSS."""
+    common = f'''
+    :root {{
+      --w: {width}px;
+      --h: {height}px;
+      font-family: {font}, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }}
+    * {{ box-sizing: border-box; margin: 0; }}
+    html, body {{ width: 100%; height: 100%; overflow: hidden; background: var(--bg); color: var(--fg); }}
+    body {{ width: var(--w); height: var(--h); transform-origin: top left; }}
+    .scene {{ position: absolute; inset: 0; overflow: hidden; pointer-events: none; }}
+    .progress {{ position: absolute; left: 0; bottom: 0; height: 10px; width: 100%; transform: scaleX(0); transform-origin: left center; background: linear-gradient(90deg, var(--accent), var(--accent-2)); z-index: 8; }}
+    .eyebrow {{ margin: 0 0 22px; color: var(--accent); font-size: clamp(22px, 2vw, 38px); font-weight: 750; text-transform: uppercase; letter-spacing: 0; }}
+    h1 {{ margin: 0; font-size: clamp(64px, 6.4vw, 138px); line-height: .95; letter-spacing: 0; text-wrap: balance; }}
+    .caption {{ margin: 30px 0 0; max-width: 820px; font-size: clamp(28px, 2.3vw, 48px); line-height: 1.18; color: color-mix(in srgb, var(--fg) 78%, transparent); }}
+    .visual {{ width: 100%; height: 100%; object-fit: cover; }}'''
+
+    if layout == "hero_center":
+        return common + '''
+    #main {{ position: relative; width: var(--w); height: var(--h); overflow: hidden; isolation: isolate;
+      background: radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--accent) 25%, transparent), transparent 60%),
+                  linear-gradient(135deg, color-mix(in srgb, var(--bg) 88%, #000), var(--bg)); }}
+    .scene-content {{ position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10%; text-align: center; z-index: 2; }}
+    .copy {{ max-width: 90%; }}
+    h1 {{ font-size: clamp(72px, 8vw, 180px); }}
+    .caption {{ margin: 40px auto 0; max-width: 700px; font-size: clamp(28px, 2.5vw, 52px); }}
+    @media (max-aspect-ratio: 1/1) { h1 { font-size: clamp(48px, 10vw, 120px); } }'''
+
+    if layout == "split_full":
+        return common + '''
+    #main {{ position: relative; width: var(--w); height: var(--h); overflow: hidden; isolation: isolate; background: var(--bg); }}
+    .scene-content {{ position: absolute; inset: 0; display: grid; grid-template-columns: 1fr 1fr; z-index: 2; }}
+    .copy {{ display: flex; flex-direction: column; justify-content: center; padding: 8% 6% 8% 8%; }}
+    .visual-block {{ position: relative; overflow: hidden; }}
+    .visual-block img {{ width: 100%; height: 100%; object-fit: cover; }}
+    @media (max-aspect-ratio: 1/1) { .scene-content { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr; } }'''
+
+    if layout == "timeline_flow":
+        return common + '''
+    #main {{ position: relative; width: var(--w); height: var(--h); overflow: hidden; isolation: isolate;
+      background: radial-gradient(circle at 80% 20%, color-mix(in srgb, var(--accent) 20%, transparent), transparent 40%),
+                  linear-gradient(160deg, color-mix(in srgb, var(--bg) 90%, #000), var(--bg)); }}
+    .scene-content {{ position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; padding: 8%; z-index: 2; }}
+    .copy {{ max-width: 70%; }}
+    .step-number {{ font-size: clamp(120px, 12vw, 280px); font-weight: 900; color: color-mix(in srgb, var(--accent) 15%, transparent); line-height: 1; margin-bottom: 20px; }}
+    .caption {{ margin: 24px 0 0; font-size: clamp(24px, 2vw, 42px); }}
+    @media (max-aspect-ratio: 1/1) { .copy { max-width: 95%; } h1 { font-size: clamp(48px, 8vw, 100px); } }'''
+
+    if layout == "stats_grid":
+        return common + '''
+    #main {{ position: relative; width: var(--w); height: var(--h); overflow: hidden; isolation: isolate;
+      background: linear-gradient(135deg, color-mix(in srgb, var(--bg) 92%, #000), var(--bg)); }}
+    .scene-content {{ position: absolute; inset: 0; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 3%; padding: 6%; z-index: 2; }}
+    .stat-card {{ display: flex; flex-direction: column; justify-content: center; padding: 6%; border: 1px solid color-mix(in srgb, var(--fg) 12%, transparent); border-radius: 16px; background: color-mix(in srgb, var(--fg) 5%, transparent); }}
+    .stat-number {{ font-size: clamp(64px, 6vw, 140px); font-weight: 900; color: var(--accent); line-height: 1; }}
+    .stat-label {{ font-size: clamp(20px, 1.8vw, 36px); color: color-mix(in srgb, var(--fg) 65%, transparent); margin-top: 12px; }}
+    @media (max-aspect-ratio: 1/1) { .scene-content { grid-template-columns: 1fr; } }'''
+
+    if layout == "testimonial_card":
+        return common + '''
+    #main {{ position: relative; width: var(--w); height: var(--h); overflow: hidden; isolation: isolate;
+      background: radial-gradient(circle at 30% 70%, color-mix(in srgb, var(--accent) 18%, transparent), transparent 50%),
+                  linear-gradient(135deg, color-mix(in srgb, var(--bg) 90%, #000), var(--bg)); }}
+    .scene-content {{ position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10%; text-align: center; z-index: 2; }}
+    .copy {{ max-width: 85%; }}
+    .quote-mark {{ font-size: clamp(120px, 10vw, 240px); color: var(--accent); line-height: 0.6; opacity: 0.4; font-family: Georgia, serif; }}
+    h1 {{ font-size: clamp(52px, 5vw, 110px); font-style: italic; line-height: 1.1; }}
+    .attribution {{ margin-top: 40px; font-size: clamp(22px, 2vw, 38px); color: var(--accent-2); font-weight: 600; }}
+    @media (max-aspect-ratio: 1/1) { h1 { font-size: clamp(40px, 7vw, 90px); } }'''
+
+    if layout == "step_flow":
+        return common + '''
+    #main {{ position: relative; width: var(--w); height: var(--h); overflow: hidden; isolation: isolate;
+      background: linear-gradient(180deg, var(--bg), color-mix(in srgb, var(--bg) 95%, var(--accent))); }}
+    .scene-content {{ position: absolute; inset: 0; display: grid; grid-template-columns: 0.35fr 0.65fr; align-items: center; padding: 8%; z-index: 2; }}
+    .step-number {{ font-size: clamp(180px, 18vw, 400px); font-weight: 900; color: color-mix(in srgb, var(--accent) 12%, transparent); line-height: 0.85; text-align: center; }}
+    .copy {{ padding-left: 6%; }}
+    @media (max-aspect-ratio: 1/1) { .scene-content { grid-template-columns: 1fr; } .step-number { font-size: clamp(100px, 20vw, 200px); } }'''
+
+    if layout == "banner_announce":
+        return common + '''
+    #main {{ position: relative; width: var(--w); height: var(--h); overflow: hidden; isolation: isolate;
+      background: radial-gradient(circle at 50% 30%, color-mix(in srgb, var(--accent) 30%, transparent), transparent 50%),
+                  linear-gradient(135deg, color-mix(in srgb, var(--bg) 85%, #000), var(--bg)); }}
+    .scene-content {{ position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10%; text-align: center; z-index: 2; }}
+    .copy {{ max-width: 85%; }}
+    h1 {{ font-size: clamp(64px, 7vw, 160px); }}
+    .banner-line {{ width: 120px; height: 4px; background: var(--accent); margin: 30px auto; border-radius: 2px; }}
+    .caption {{ margin: 0 auto; font-size: clamp(24px, 2.2vw, 44px); }}
+    @media (max-aspect-ratio: 1/1) { h1 { font-size: clamp(48px, 9vw, 120px); } }'''
+
+    # split_grid (fallback)
+    return common + '''
+    #main {{ position: relative; width: var(--w); height: var(--h); overflow: hidden; isolation: isolate;
+      background: radial-gradient(circle at 75% 18%, color-mix(in srgb, var(--accent) 30%, transparent), transparent 28%),
+                  linear-gradient(135deg, color-mix(in srgb, var(--bg) 88%, #000), var(--bg)); }}
+    .backdrop {{ position: absolute; inset: 0; background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 12%, transparent), transparent 55%),
+      repeating-linear-gradient(90deg, transparent 0 86px, color-mix(in srgb, var(--fg) 6%, transparent) 86px 87px); opacity: .75; }}
+    .scene-content {{ position: absolute; inset: 0; display: grid; grid-template-columns: 1.02fr .98fr; gap: 4%; align-items: center; padding: 7%; z-index: 2; }}
+    .copy {{ max-width: 92%; }}
+    .visual-block {{ position: relative; aspect-ratio: 4 / 3; display: grid; place-items: center; border: 1px solid color-mix(in srgb, var(--fg) 18%, transparent);
+      background: linear-gradient(135deg, color-mix(in srgb, var(--fg) 10%, transparent), color-mix(in srgb, var(--accent) 10%, transparent));
+      box-shadow: 0 40px 120px color-mix(in srgb, #000 34%, transparent); overflow: hidden; }}
+    .visual-panel {{ width: 100%; height: 100%; padding: 8%; display: flex; flex-direction: column; justify-content: space-between;
+      background: radial-gradient(circle at 20% 12%, color-mix(in srgb, var(--accent) 28%, transparent), transparent 34%),
+                  linear-gradient(160deg, color-mix(in srgb, var(--fg) 10%, transparent), color-mix(in srgb, var(--bg) 72%, transparent)); }}
+    .visual-panel strong {{ font-size: clamp(34px, 3vw, 64px); line-height: 1.02; max-width: 86%; }}
+    .visual-panel em {{ align-self: flex-end; font-style: normal; font-size: clamp(54px, 5vw, 108px); font-weight: 850; color: var(--accent-2); }}
+    .chips {{ display: flex; flex-wrap: wrap; gap: 14px; max-width: 90%; }}
+    .chips span {{ padding: 12px 16px; border: 1px solid color-mix(in srgb, var(--fg) 22%, transparent); background: color-mix(in srgb, var(--bg) 55%, transparent); font-size: clamp(20px, 1.5vw, 32px); }}
+    @media (max-aspect-ratio: 1/1) { .scene-content { grid-template-columns: 1fr; } .visual-block { width: 100%; align-self: end; } }'''
+
+
+def _layout_frame_html(layout: str, index: int, frame: dict, project: dict, visual_html: str, media_html: str) -> str:
+    """Generate frame HTML based on layout type."""
+    start = float(frame.get("start", 0))
+    scene_duration = float(frame.get("duration", 1))
+    headline = _html_escape(frame.get("headline") or "")
+    caption = _html_escape(frame.get("caption") or "")
+    eyebrow = _html_escape(project.get("template_name") or "")
+
+    if layout == "hero_center":
+        return f'''
+      <div id="scene-{index}" class="clip scene" data-start="{start:.3f}" data-duration="{scene_duration:.3f}" data-track-index="{index + 1}">
+        <div class="scene-content">
+          <div class="copy">
+            <h1>{headline}</h1>
+            <p class="caption">{caption}</p>
+          </div>
+        </div>
+      </div>'''
+
+    if layout == "split_full":
+        visual_content = media_html if media_html else f'<div style="width:100%;height:100%;background:linear-gradient(135deg, color-mix(in srgb, var(--accent) 20%, transparent), color-mix(in srgb, var(--bg) 80%, transparent));"></div>'
+        return f'''
+      <div id="scene-{index}" class="clip scene" data-start="{start:.3f}" data-duration="{scene_duration:.3f}" data-track-index="{index + 1}">
+        <div class="scene-content">
+          <div class="copy">
+            <p class="eyebrow">{eyebrow}</p>
+            <h1>{headline}</h1>
+            <p class="caption">{caption}</p>
+          </div>
+          <div class="visual-block">{visual_content}</div>
+        </div>
+      </div>'''
+
+    if layout == "timeline_flow":
+        return f'''
+      <div id="scene-{index}" class="clip scene" data-start="{start:.3f}" data-duration="{scene_duration:.3f}" data-track-index="{index + 1}">
+        <div class="scene-content">
+          <div class="copy">
+            <div class="step-number">{index + 1:02d}</div>
+            <h1>{headline}</h1>
+            <p class="caption">{caption}</p>
+          </div>
+        </div>
+      </div>'''
+
+    if layout == "stats_grid":
+        words = _slug_words(str(frame.get("caption") or ""), 4)
+        stat_value = words[0] if words else "—"
+        return f'''
+      <div id="scene-{index}" class="clip scene" data-start="{start:.3f}" data-duration="{scene_duration:.3f}" data-track-index="{index + 1}">
+        <div class="scene-content">
+          <div class="stat-card">
+            <span class="stat-number">{_html_escape(stat_value)}</span>
+            <h1>{headline}</h1>
+            <p class="caption">{caption}</p>
+          </div>
+        </div>
+      </div>'''
+
+    if layout == "testimonial_card":
+        return f'''
+      <div id="scene-{index}" class="clip scene" data-start="{start:.3f}" data-duration="{scene_duration:.3f}" data-track-index="{index + 1}">
+        <div class="scene-content">
+          <div class="copy">
+            <div class="quote-mark">"</div>
+            <h1>{headline}</h1>
+            <p class="caption">{caption}</p>
+          </div>
+        </div>
+      </div>'''
+
+    if layout == "step_flow":
+        return f'''
+      <div id="scene-{index}" class="clip scene" data-start="{start:.3f}" data-duration="{scene_duration:.3f}" data-track-index="{index + 1}">
+        <div class="scene-content">
+          <div class="step-number">{index + 1}</div>
+          <div class="copy">
+            <p class="eyebrow">{eyebrow}</p>
+            <h1>{headline}</h1>
+            <p class="caption">{caption}</p>
+          </div>
+        </div>
+      </div>'''
+
+    if layout == "banner_announce":
+        return f'''
+      <div id="scene-{index}" class="clip scene" data-start="{start:.3f}" data-duration="{scene_duration:.3f}" data-track-index="{index + 1}">
+        <div class="scene-content">
+          <div class="copy">
+            <p class="eyebrow">{eyebrow}</p>
+            <h1>{headline}</h1>
+            <div class="banner-line"></div>
+            <p class="caption">{caption}</p>
+          </div>
+        </div>
+      </div>'''
+
+    # split_grid fallback
+    return f'''
+      <div id="scene-{index}" class="clip scene" data-start="{start:.3f}" data-duration="{scene_duration:.3f}" data-track-index="{index + 1}">
+        <div class="backdrop"></div>
+        <div class="scene-content">
+          <div class="copy">
+            <p class="eyebrow">{eyebrow}</p>
+            <h1>{headline}</h1>
+            <p class="caption">{caption}</p>
+          </div>
+          <div class="visual-block">{visual_html}</div>
+        </div>
+      </div>'''
+
+
+def _generated_visual(project: dict, frame: dict, index: int) -> str:
+    """Generate visual panel content. Only used for split_grid fallback layout."""
+    template = str(project.get("template") or "")
+    raw_words = _slug_words(str(frame.get("caption") or project.get("brief") or ""), 12)
+    words = _deduplicate_words(raw_words)
+    if not words:
+        words = ["Video", "Studio"]
+    label = _html_escape(frame.get("headline") or frame.get("role") or "Scene")
+    chips = "".join(f"<span>{_html_escape(word)}</span>" for word in words[:5])
+    number = f"{index + 1:02d}"
+    if template == "data_story":
+        bars = "".join(
+            f'<i style="--bar:{min(92, 32 + i * 14)}%"><b>{_html_escape(words[i % len(words)] if words else "KPI")}</b></i>'
+            for i in range(4)
+        )
+        return f'<div class="visual-panel data-panel"><strong>{label}</strong><div class="bars">{bars}</div><em>{number}</em></div>'
+    if template in {"explainer", "feature_demo", "changelog"}:
+        nodes = "".join(f"<span>{_html_escape(word)}</span>" for word in words[:4])
+        return f'<div class="visual-panel diagram-panel"><strong>{label}</strong><div class="nodes">{nodes}</div><em>{number}</em></div>'
+    if template == "minimalist_quote":
+        quote = _html_escape(" ".join(words[:9]) or label)
+        return f'<div class="visual-panel quote-panel"><strong>"{quote}"</strong><em>{number}</em></div>'
+    return f'<div class="visual-panel card-panel"><strong>{label}</strong><div class="chips">{chips}</div><em>{number}</em></div>'
+
+
 def _render_html(project: dict, html_dir: Path) -> Path:
     copied_assets, audio_info = _copy_render_assets(project, html_dir)
     width = int(project["resolution"]["width"])
     height = int(project["resolution"]["height"])
     duration = float(project["duration"])
     fps = int(project.get("fps", 30))
+    template_key = str(project.get("template") or "")
+    layout = _get_layout(template_key)
     palette = list((project.get("style") or {}).get("palette") or ["#0B0F19", "#F8FAFC", "#22D3EE", "#A3E635"])
     while len(palette) < 4:
         palette.append(palette[-1])
+    font = str((project.get("style") or {}).get("font") or "Inter")
 
     image_assets = [asset for asset in copied_assets if _media_kind(asset) == "image" and asset.get("render_src")]
     frames = [_frame_copy(frame, project, index) for index, frame in enumerate(project.get("frames", []))]
@@ -418,26 +695,11 @@ def _render_html(project: dict, html_dir: Path) -> Path:
     frame_html = []
     for index, frame in enumerate(frames):
         media = image_assets[index % len(image_assets)] if image_assets else None
-        media_html = _generated_visual(project, frame, index)
-        if media:
-            media_html = f'<img class="visual" src="{_html_escape(media["render_src"])}" alt="">'
-        start = float(frame.get("start", 0))
-        scene_duration = float(frame.get("duration", 1))
-        frame_html.append(
-            f'''
-      <div id="scene-{index}" class="clip scene scene-{index}" data-start="{start:.3f}" data-duration="{scene_duration:.3f}" data-track-index="{index + 1}">
-        <div class="backdrop"></div>
-        <div class="scene-content">
-          <div class="copy">
-            <p class="eyebrow">{_html_escape(project.get("template_name"))}</p>
-            <h1>{_html_escape(frame.get("headline"))}</h1>
-            <p class="caption">{_html_escape(frame.get("caption"))}</p>
-          </div>
-          <div class="visual-block">{media_html}</div>
-        </div>
-      </div>'''
-        )
+        media_src = f'<img class="visual" src="{_html_escape(media["render_src"])}" alt="">' if media else ""
+        visual_html = _generated_visual(project, frame, index)
+        frame_html.append(_layout_frame_html(layout, index, frame, project, visual_html, media_src))
 
+    layout_css = _layout_css(layout, width, height, font)
     html = f'''<!doctype html>
 <html lang="en">
 <head>
@@ -457,189 +719,8 @@ def _render_html(project: dict, html_dir: Path) -> Path:
       --fg: {_css_string(palette[1])};
       --accent: {_css_string(palette[2])};
       --accent-2: {_css_string(palette[3])};
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     }}
-    * {{ box-sizing: border-box; }}
-    html, body {{
-      margin: 0;
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-      background: var(--bg);
-      color: var(--fg);
-    }}
-    body {{
-      width: var(--w);
-      height: var(--h);
-      transform-origin: top left;
-    }}
-    #main {{
-      position: relative;
-      width: var(--w);
-      height: var(--h);
-      overflow: hidden;
-      isolation: isolate;
-      background:
-        radial-gradient(circle at 75% 18%, color-mix(in srgb, var(--accent) 30%, transparent), transparent 28%),
-        linear-gradient(135deg, color-mix(in srgb, var(--bg) 88%, #000), var(--bg));
-    }}
-    .scene {{
-      position: absolute;
-      inset: 0;
-      overflow: hidden;
-      pointer-events: none;
-    }}
-    .backdrop {{
-      position: absolute;
-      inset: 0;
-      background:
-        linear-gradient(90deg, color-mix(in srgb, var(--accent) 12%, transparent), transparent 55%),
-        repeating-linear-gradient(90deg, transparent 0 86px, color-mix(in srgb, var(--fg) 6%, transparent) 86px 87px);
-      opacity: .75;
-    }}
-    .scene-content {{
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      display: grid;
-      grid-template-columns: 1.02fr .98fr;
-      gap: 4%;
-      align-items: center;
-      padding: 7%;
-      box-sizing: border-box;
-      z-index: 2;
-    }}
-    .copy {{
-      max-width: 92%;
-    }}
-    .eyebrow {{
-      margin: 0 0 22px;
-      color: var(--accent);
-      font-size: clamp(22px, 2vw, 38px);
-      font-weight: 750;
-      text-transform: uppercase;
-      letter-spacing: 0;
-    }}
-    h1 {{
-      margin: 0;
-      font-size: clamp(64px, 6.4vw, 138px);
-      line-height: .95;
-      letter-spacing: 0;
-      text-wrap: balance;
-    }}
-    .caption {{
-      margin: 30px 0 0;
-      max-width: 820px;
-      font-size: clamp(28px, 2.3vw, 48px);
-      line-height: 1.18;
-      color: color-mix(in srgb, var(--fg) 78%, transparent);
-    }}
-    .visual-block {{
-      position: relative;
-      aspect-ratio: 4 / 3;
-      display: grid;
-      place-items: center;
-      min-width: 0;
-      border: 1px solid color-mix(in srgb, var(--fg) 18%, transparent);
-      background:
-        linear-gradient(135deg, color-mix(in srgb, var(--fg) 10%, transparent), color-mix(in srgb, var(--accent) 10%, transparent));
-      box-shadow: 0 40px 120px color-mix(in srgb, #000 34%, transparent);
-      overflow: hidden;
-    }}
-    .visual {{
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }}
-    .visual-panel {{
-      width: 100%;
-      height: 100%;
-      padding: 8%;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      background:
-        radial-gradient(circle at 20% 12%, color-mix(in srgb, var(--accent) 28%, transparent), transparent 34%),
-        linear-gradient(160deg, color-mix(in srgb, var(--fg) 10%, transparent), color-mix(in srgb, var(--bg) 72%, transparent));
-    }}
-    .visual-panel strong {{
-      font-size: clamp(34px, 3vw, 64px);
-      line-height: 1.02;
-      max-width: 86%;
-    }}
-    .visual-panel em {{
-      align-self: flex-end;
-      font-style: normal;
-      font-size: clamp(54px, 5vw, 108px);
-      font-weight: 850;
-      color: var(--accent-2);
-    }}
-    .chips, .nodes {{
-      display: flex;
-      flex-wrap: wrap;
-      gap: 14px;
-      max-width: 90%;
-    }}
-    .chips span, .nodes span {{
-      padding: 12px 16px;
-      border: 1px solid color-mix(in srgb, var(--fg) 22%, transparent);
-      background: color-mix(in srgb, var(--bg) 55%, transparent);
-      font-size: clamp(20px, 1.5vw, 32px);
-    }}
-    .nodes span {{
-      border-color: color-mix(in srgb, var(--accent) 48%, transparent);
-    }}
-    .bars {{
-      display: grid;
-      gap: 18px;
-      width: 88%;
-    }}
-    .bars i {{
-      position: relative;
-      display: block;
-      height: 38px;
-      background: color-mix(in srgb, var(--fg) 10%, transparent);
-      overflow: hidden;
-    }}
-    .bars i::before {{
-      content: "";
-      position: absolute;
-      inset: 0 auto 0 0;
-      width: var(--bar);
-      background: linear-gradient(90deg, var(--accent), var(--accent-2));
-    }}
-    .bars b {{
-      position: relative;
-      z-index: 1;
-      padding-left: 14px;
-      line-height: 38px;
-      font-size: 20px;
-      color: var(--fg);
-    }}
-    .quote-panel strong {{
-      font-size: clamp(48px, 4vw, 86px);
-      line-height: 1.06;
-    }}
-    .progress {{
-      position: absolute;
-      left: 0;
-      bottom: 0;
-      height: 10px;
-      width: 100%;
-      transform: scaleX(0);
-      transform-origin: left center;
-      background: linear-gradient(90deg, var(--accent), var(--accent-2));
-      z-index: 8;
-    }}
-    @media (max-aspect-ratio: 1/1) {{
-      .scene-content {{
-        grid-template-columns: 1fr;
-        grid-template-rows: auto 1fr;
-        padding: 8%;
-      }}
-      .visual-block {{ width: 100%; align-self: end; }}
-    }}
+    {layout_css}
   </style>
 </head>
 <body>
@@ -654,8 +735,8 @@ def _render_html(project: dict, html_dir: Path) -> Path:
     window.__timelines = window.__timelines || {{}};
     const tl = gsap.timeline({{ paused: true }});
     // Hide all scenes first, then show scene-0
-    tl.set(".scene .copy, .scene .visual-block", {{ opacity: 0, x: 0, y: 0, scale: 1 }}, 0);
-    tl.set("#scene-0 .copy, #scene-0 .visual-block", {{ opacity: 1 }}, 0);
+    tl.set(".scene .copy, .scene .visual-block, .scene .stat-card, .scene .step-number, .scene .quote-mark, .scene .banner-line", {{ opacity: 0, x: 0, y: 0, scale: 1 }}, 0);
+    tl.set("#scene-0 .copy, #scene-0 .visual-block, #scene-0 .stat-card, #scene-0 .step-number, #scene-0 .quote-mark, #scene-0 .banner-line", {{ opacity: 1 }}, 0);
     tl.fromTo(".progress", {{ scaleX: 0, transformOrigin: "left center" }}, {{ scaleX: 1, duration: {duration:.6f}, ease: "none" }}, 0);
 '''
     for index, frame in enumerate(frames):
@@ -666,13 +747,24 @@ def _render_html(project: dict, html_dir: Path) -> Path:
         exit_time = start + scene_duration - 0.4
         if exit_time < start + 0.05:
             exit_time = start + 0.05
+        # Adapt animation targets to layout
+        if layout in ("stats_grid",):
+            enter_target = ".stat-card"
+        elif layout in ("step_flow",):
+            enter_target = ".step-number, .copy"
+        elif layout in ("testimonial_card",):
+            enter_target = ".quote-mark, .copy"
+        elif layout in ("banner_announce",):
+            enter_target = ".banner-line, .copy"
+        elif layout in ("split_full",):
+            enter_target = ".copy, .visual-block"
+        else:
+            enter_target = ".copy"
         html += f'''
     // Scene {index}: enter at {start:.3f}s, exit at {exit_time:.3f}s
-    tl.fromTo("#scene-{index} .copy", {{ y: 50, opacity: 0 }}, {{ y: 0, opacity: 1, duration: 0.5, ease: "power3.out" }}, {start:.3f});
-    tl.fromTo("#scene-{index} .visual-block", {{ y: 40, scale: 0.97, opacity: 0 }}, {{ y: 0, scale: 1, opacity: 1, duration: 0.5, ease: "power3.out" }}, {start + 0.08:.3f});
-    tl.to("#scene-{index} .copy", {{ y: -30, opacity: 0, duration: 0.4, ease: "power2.in" }}, {exit_time:.3f});
-    tl.to("#scene-{index} .visual-block", {{ y: -20, opacity: 0, duration: 0.4, ease: "power2.in" }}, {exit_time + 0.04:.3f});
-    tl.set("#scene-{index} .copy, #scene-{index} .visual-block", {{ opacity: 0 }}, {scene_end:.3f});
+    tl.fromTo("#scene-{index} {enter_target}", {{ y: 40, opacity: 0 }}, {{ y: 0, opacity: 1, duration: 0.5, ease: "power3.out" }}, {start:.3f});
+    tl.to("#scene-{index} {enter_target}", {{ y: -25, opacity: 0, duration: 0.4, ease: "power2.in" }}, {exit_time:.3f});
+    tl.set("#scene-{index} {enter_target}", {{ opacity: 0 }}, {scene_end:.3f});
 '''
     html += f'''
     window.__timelines["main"] = tl;

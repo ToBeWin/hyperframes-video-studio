@@ -150,7 +150,13 @@ python3 "{baseDir}/scripts/asset_ingest.py" --input-json "{baseDir}/.cache/asset
           "customer_testimonial",
           "event_promo",
           "changelog",
-          "ecommerce_promo"
+          "ecommerce_promo",
+          "cinematic_hero",
+          "split_showcase",
+          "step_by_step",
+          "metrics_dashboard",
+          "social_card",
+          "announcement"
         ]
       },
       "brief": {"type": "string"},
@@ -231,7 +237,13 @@ What kind of video do you want to make?
 8. Event Promo - webinar, course, meetup, or launch event
 9. Product Changelog - release notes and product updates
 10. E-commerce Promo - product offer or sale video
-11. I am not sure - recommend one for me
+11. Cinematic Hero - brand manifesto, emotional statement
+12. Split Showcase - product tour, side-by-side
+13. Step by Step - tutorial, onboarding, setup guide
+14. Metrics Dashboard - multi-metric scorecard
+15. Social Card - Instagram story, TikTok text
+16. Announcement - product launch, company news
+17. I am not sure - recommend one for me
 ```
 
 If the user chooses "I am not sure", infer intent:
@@ -246,6 +258,12 @@ If the user chooses "I am not sure", infer intent:
 - Webinar, live, course, event -> `event_promo`
 - Version, release notes, new updates -> `changelog`
 - Sale, product photo, discount, shop -> `ecommerce_promo`
+- Brand, manifesto, emotional, epic -> `cinematic_hero`
+- Product tour, showcase, comparison -> `split_showcase`
+- Tutorial, step-by-step, how-to, onboarding -> `step_by_step`
+- Scorecard, dashboard, multiple metrics -> `metrics_dashboard`
+- Instagram, TikTok, social, story -> `social_card`
+- Announcement, news, reveal, launch -> `announcement`
 
 ### Step 2: Lightweight Guided Questions
 
@@ -455,18 +473,48 @@ hyperframes render "{baseDir}/.cache/hyperframes/product_launch-123-html"
 
 ## Template Library
 
-Detailed template data lives in `templates/video_templates.json`.
+16 templates with 8 distinct layouts. Detailed data in `templates/video_templates.json`.
 
-- `product_launch`: app, SaaS, tool, course, hardware, plugin launches.
-- `feature_demo`: feature walkthrough with steps and screenshots.
-- `data_story`: KPI reports, investor updates, growth recaps.
-- `minimalist_quote`: cinematic typography for social posts.
-- `explainer`: concept, workflow, and tutorial videos.
-- `before_after`: transformation and result comparison.
-- `customer_testimonial`: customer quotes and case study proof.
-- `event_promo`: webinars, courses, launches, meetups.
-- `changelog`: release notes and product update videos.
-- `ecommerce_promo`: product offer and sale videos.
+### Layout Types
+
+| Layout | Visual Style | Description |
+|--------|-------------|-------------|
+| `hero_center` | Full-screen centered | Large text centered on background, no side panel |
+| `split_full` | 50/50 split | Left text, right full-screen visual |
+| `split_grid` | Left text + right card | Classic 2-column with 4:3 visual card (fallback) |
+| `timeline_flow` | Numbered steps | Large step number + title + description |
+| `stats_grid` | Data cards | Grid of metric cards with large numbers |
+| `testimonial_card` | Quote card | Centered quote with attribution |
+| `step_flow` | Left number + right content | Giant semi-transparent number + text |
+| `banner_announce` | Centered banner | Headline + decorative line + details |
+
+### Template List
+
+**Business & Product**
+- `product_launch` — app, SaaS, tool, course launches (split_full)
+- `feature_demo` — feature walkthrough with steps (timeline_flow)
+- `split_showcase` — product tours, side-by-side (split_full)
+- `changelog` — release notes and updates (timeline_flow)
+- `announcement` — product launches, company news (banner_announce)
+
+**Data & Analytics**
+- `data_story` — KPI reports, investor updates (stats_grid)
+- `metrics_dashboard` — multi-metric scorecards (stats_grid)
+
+**Social & Brand**
+- `minimalist_quote` — cinematic quote videos (hero_center)
+- `cinematic_hero` — brand manifestos, emotional statements (hero_center)
+- `social_card` — Instagram stories, TikTok text (hero_center)
+
+**Education & How-to**
+- `explainer` — concept explanations, tutorials (step_flow)
+- `step_by_step` — onboarding flows, setup guides (timeline_flow)
+
+**Sales & Conversion**
+- `customer_testimonial` — customer quotes, case studies (testimonial_card)
+- `before_after` — transformation comparisons (testimonial_card)
+- `ecommerce_promo` — product offers, sales (stats_grid)
+- `event_promo` — webinars, meetups, launches (banner_announce)
 
 For unsupported scenes, map the user's intent to the closest template, then customize the brief, aspect ratio, frames, and text.
 
