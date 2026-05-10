@@ -661,6 +661,7 @@ def _render_html(project: dict, html_dir: Path) -> Path:
     for index, frame in enumerate(frames):
         start = float(frame.get("start", 0))
         scene_duration = float(frame.get("duration", 1))
+        scene_end = start + scene_duration
         # Exit: start fading out 0.4s before scene ends, fully hidden at scene end
         exit_time = start + scene_duration - 0.4
         if exit_time < start + 0.05:
@@ -671,6 +672,7 @@ def _render_html(project: dict, html_dir: Path) -> Path:
     tl.fromTo("#scene-{index} .visual-block", {{ y: 40, scale: 0.97, opacity: 0 }}, {{ y: 0, scale: 1, opacity: 1, duration: 0.5, ease: "power3.out" }}, {start + 0.08:.3f});
     tl.to("#scene-{index} .copy", {{ y: -30, opacity: 0, duration: 0.4, ease: "power2.in" }}, {exit_time:.3f});
     tl.to("#scene-{index} .visual-block", {{ y: -20, opacity: 0, duration: 0.4, ease: "power2.in" }}, {exit_time + 0.04:.3f});
+    tl.set("#scene-{index} .copy, #scene-{index} .visual-block", {{ opacity: 0 }}, {scene_end:.3f});
 '''
     html += f'''
     window.__timelines["main"] = tl;
@@ -830,7 +832,7 @@ def build_project(request: dict) -> dict:
         "resolution": resolution,
         "fps": int(request.get("fps", 30)),
         "duration": total_duration,
-        "style": template["style"],
+        "style": request.get("style") or template["style"],
         "assets": resolved_assets,
         "asset_manifest": asset_manifest.get("manifest_path") if asset_manifest else None,
         "asset_summary": asset_manifest.get("summary") if asset_manifest else None,

@@ -160,6 +160,14 @@ python3 "{baseDir}/scripts/asset_ingest.py" --input-json "{baseDir}/.cache/asset
       "asset_manifest": {"type": "string"},
       "audio": {"type": "string"},
       "render": {"type": "boolean"},
+      "style": {
+        "type": "object",
+        "description": "Optional style override. If provided, overrides the template's default palette and font.",
+        "properties": {
+          "palette": {"type": "array", "items": {"type": "string"}, "description": "Array of 3-4 hex colors: [background, foreground, accent, accent-2]"},
+          "font": {"type": "string", "description": "CSS font family name"}
+        }
+      },
       "frame_contents": {
         "type": "array",
         "description": "Optional per-frame headline and caption. If omitted, the engine extracts content from the brief. Recommended: generate frame-specific copy from the brief before calling this tool.",
@@ -401,6 +409,7 @@ Call `scripts/video_engine.py`. It must:
 - Embed tiny assets as base64 only when `embed_assets` is true.
 - Load templates from `templates/video_templates.json`.
 - Accept `frame_contents` (array of `{headline, caption}`) for per-frame copy. If provided, the engine uses these directly. If omitted, it falls back to brief extraction.
+- Accept `style` object with `palette` (array of hex colors) and `font` (CSS font name) to override the template's default style.
 - Build a Video Studio JSON manifest.
 - Generate a renderable HTML project directory containing `index.html`, `project.json`, and copied relative assets.
 - Inject audio duration into frame timing.
