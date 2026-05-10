@@ -653,20 +653,24 @@ def _render_html(project: dict, html_dir: Path) -> Path:
   <script>
     window.__timelines = window.__timelines || {{}};
     const tl = gsap.timeline({{ paused: true }});
-    tl.set(".scene .copy, .scene .visual-block", {{ opacity: 1, x: 0, y: 0, scale: 1 }}, 0);
+    // Hide all scenes first, then show scene-0
+    tl.set(".scene .copy, .scene .visual-block", {{ opacity: 0, x: 0, y: 0, scale: 1 }}, 0);
+    tl.set("#scene-0 .copy, #scene-0 .visual-block", {{ opacity: 1 }}, 0);
     tl.fromTo(".progress", {{ scaleX: 0, transformOrigin: "left center" }}, {{ scaleX: 1, duration: {duration:.6f}, ease: "none" }}, 0);
 '''
     for index, frame in enumerate(frames):
         start = float(frame.get("start", 0))
         scene_duration = float(frame.get("duration", 1))
-        exit_time = max(start + scene_duration - 0.45, start + 0.1)
+        # Exit: start fading out 0.4s before scene ends, fully hidden at scene end
+        exit_time = start + scene_duration - 0.4
+        if exit_time < start + 0.05:
+            exit_time = start + 0.05
         html += f'''
-    tl.from("#scene-{index} .copy", {{ y: 60, opacity: 0, duration: 0.55, ease: "power3.out" }}, {start + 0.12:.3f});
-    tl.from("#scene-{index} .visual-block", {{ y: 48, scale: 0.96, opacity: 0, duration: 0.55, ease: "power3.out" }}, {start + 0.22:.3f});
-    tl.to("#scene-{index} .copy", {{ y: -32, opacity: 0, duration: 0.35, ease: "power2.in" }}, {exit_time:.3f});
-    tl.to("#scene-{index} .visual-block", {{ y: -24, opacity: 0, duration: 0.35, ease: "power2.in" }}, {exit_time + 0.05:.3f});
-    tl.set("#scene-{index} .copy", {{ opacity: 0 }}, {start + scene_duration:.3f});
-    tl.set("#scene-{index} .visual-block", {{ opacity: 0 }}, {start + scene_duration:.3f});
+    // Scene {index}: enter at {start:.3f}s, exit at {exit_time:.3f}s
+    tl.fromTo("#scene-{index} .copy", {{ y: 50, opacity: 0 }}, {{ y: 0, opacity: 1, duration: 0.5, ease: "power3.out" }}, {start:.3f});
+    tl.fromTo("#scene-{index} .visual-block", {{ y: 40, scale: 0.97, opacity: 0 }}, {{ y: 0, scale: 1, opacity: 1, duration: 0.5, ease: "power3.out" }}, {start + 0.08:.3f});
+    tl.to("#scene-{index} .copy", {{ y: -30, opacity: 0, duration: 0.4, ease: "power2.in" }}, {exit_time:.3f});
+    tl.to("#scene-{index} .visual-block", {{ y: -20, opacity: 0, duration: 0.4, ease: "power2.in" }}, {exit_time + 0.04:.3f});
 '''
     html += f'''
     window.__timelines["main"] = tl;
@@ -741,13 +745,17 @@ def _ffprobe_duration(path: Path) -> float | None:
 
 
 def _scale_frames(frames: list[dict], target_duration: float | None) -> list[dict]:
-    if not target_duration:
-        return frames
-    current = sum(float(frame["duration"]) for frame in frames)
-    if current <= 0:
-        return frames
-    scale = target_duration / current
-    scaled = []
+    # Always compute start/end times for each frame
+    if target_duration:
+        current = sum(float(frame["duration"]) for frame in frames)
+        if current > 0:
+            scale = target_duration / current
+        else:
+            scale = 1.0
+    else:
+        scale = 1.0
+
+    result = []
     start = 0.0
     for frame in frames:
         duration = round(max(0.5, float(frame["duration"]) * scale), 3)
@@ -756,8 +764,8 @@ def _scale_frames(frames: list[dict], target_duration: float | None) -> list[dic
         item["start"] = round(start, 3)
         start += duration
         item["end"] = round(start, 3)
-        scaled.append(item)
-    return scaled
+        result.append(item)
+    return result
 
 
 def _resolution_for_aspect(aspect_ratio: str | None, default: dict) -> dict:
