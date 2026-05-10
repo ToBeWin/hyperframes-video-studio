@@ -25,29 +25,59 @@ Guided OpenClaw video studio for Hyperframes: templates, safety audit, local-fir
 Long description:
 
 ```text
-Turn simple dialogue and existing materials into controlled Hyperframes HTML video projects. Choose from 10 templates, scan folders or files safely, generate narration with free TTS, sync audio timing, and render after a local environment audit.
+Turn simple dialogue and existing materials into controlled Hyperframes HTML video projects. Choose from 16 templates with 8 distinct layouts, scan folders or files safely, generate narration with free TTS, sync audio timing, and render after a local environment audit.
 ```
 
 Suggested tags:
 
 ```text
-video, hyperframes, templates, tts, local-first, product-launch, data-story
+video, hyperframes, templates, tts, local-first, product-launch, data-story, multi-language
 ```
 
-## Built-In Templates
+## Template System
 
-- `product_launch` - app, SaaS, tool, course, hardware, plugin launches
-- `feature_demo` - feature walkthrough with screenshots or steps
-- `data_story` - KPI reports, investor updates, growth recaps
-- `minimalist_quote` - cinematic typography for social posts
-- `explainer` - concept, workflow, and tutorial videos
-- `before_after` - transformation and result comparison
-- `customer_testimonial` - customer quotes and case study proof
-- `event_promo` - webinars, courses, launches, meetups
-- `changelog` - release notes and product updates
-- `ecommerce_promo` - product offer and sale videos
+### 8 Distinct Layouts
 
-Template definitions live in `templates/video_templates.json`.
+Each template uses a unique HTML layout — not just different colors and fonts.
+
+| Layout | Visual Structure | Use Case |
+|--------|-----------------|----------|
+| `hero_center` | Full-screen centered text, no side panel | Quotes, brand manifestos, social cards |
+| `split_full` | 50/50 split, full-screen visual on right | Product launches, showcases |
+| `timeline_flow` | Large step number + title + description | Feature demos, changelogs, tutorials |
+| `stats_grid` | Grid of metric cards with large numbers | Data reports, dashboards, e-commerce |
+| `testimonial_card` | Centered quote with attribution | Testimonials, before/after |
+| `step_flow` | Giant semi-transparent number + content | Explainers, how-to videos |
+| `banner_announce` | Centered headline + decorative line | Event promos, announcements |
+| `split_grid` | Classic 2-column with card (fallback) | Default fallback layout |
+
+### 16 Templates
+
+**Business & Product**
+- `product_launch` — app, SaaS, tool, course launches (split_full)
+- `feature_demo` — feature walkthrough with steps (timeline_flow)
+- `split_showcase` — product tours, side-by-side (split_full)
+- `changelog` — release notes and updates (timeline_flow)
+- `announcement` — product launches, company news (banner_announce)
+
+**Data & Analytics**
+- `data_story` — KPI reports, investor updates (stats_grid)
+- `metrics_dashboard` — multi-metric scorecards (stats_grid)
+
+**Social & Brand**
+- `minimalist_quote` — cinematic quote videos (hero_center)
+- `cinematic_hero` — brand manifestos, emotional statements (hero_center)
+- `social_card` — Instagram stories, TikTok text (hero_center)
+
+**Education & How-to**
+- `explainer` — concept explanations, tutorials (step_flow)
+- `step_by_step` — onboarding flows, setup guides (timeline_flow)
+
+**Sales & Conversion**
+- `customer_testimonial` — customer quotes, case studies (testimonial_card)
+- `before_after` — transformation comparisons (testimonial_card)
+- `ecommerce_promo` — product offers, sales (stats_grid)
+- `event_promo` — webinars, meetups, launches (banner_announce)
 
 ## Files
 
@@ -95,6 +125,19 @@ python3 scripts/asset_ingest.py --input-json .cache/asset_request.json
 ```
 
 The manifest is saved to `.cache/assets/asset-manifest-*.json`.
+
+## Multi-Language Support
+
+The skill supports briefs and frame content in multiple languages:
+
+- **English** — sentence splitting on `. ! ?`
+- **Chinese (Simplified/Traditional)** — sentence splitting on `。！？`, CJK phrase extraction
+- **Japanese** — sentence splitting on `。！？`, CJK phrase extraction
+- **Korean** — sentence splitting on `. !`, Hangul word extraction
+- **Arabic** — sentence splitting on `؟`, Arabic word extraction
+- **Hindi** — sentence splitting on `।`, Devanagari word extraction
+
+Frame content can be provided via the `frame_contents` parameter for precise control, or auto-extracted from the brief.
 
 ## Safe Local Setup
 
@@ -160,6 +203,24 @@ Do not use `sudo`, global npm installs, or shell profile edits unless you delibe
   "assets": ["./logo.png"],
   "asset_manifest": ".cache/assets/asset-manifest-123.json",
   "audio": ".cache/audio/voice.wav",
+  "render": false
+}
+```
+
+With per-frame content control:
+
+```json
+{
+  "template": "cinematic_hero",
+  "brief": "Brand manifesto for QuietNote.",
+  "frame_contents": [
+    {"headline": "Your Notes Stay Yours", "caption": "QuietNote encrypts everything locally."},
+    {"headline": "No Cloud, No Leaks", "caption": "End-to-end encryption on your device."},
+    {"headline": "Download QuietNote", "caption": "Free on Mac, Windows, and Linux."}
+  ],
+  "style": {"palette": ["#000000", "#FAFAFA", "#D4AF37", "#8B7355"], "font": "Georgia"},
+  "aspect_ratio": "16:9",
+  "duration_seconds": 15,
   "render": false
 }
 ```
