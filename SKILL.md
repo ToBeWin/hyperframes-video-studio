@@ -1,7 +1,7 @@
 ---
 name: hyperframes-video-studio
 description: Guided OpenClaw video studio for Hyperframes: templates, safety audit, local-first TTS, and renderable HTML projects.
-version: 1.1.1
+version: 1.1.2
 license: MIT-0
 metadata: {"openclaw":{"emoji":"🎬","requires":{"bins":["python3","node","npm"]},"install":[{"id":"hyperframes-local-npm","kind":"node","package":"hyperframes","bins":["hyperframes"],"label":"Install Hyperframes CLI locally"}],"homepage":"https://github.com/heygen-com/hyperframes","upstream":"https://github.com/heygen-com/hyperframes","tags":["video","hyperframes","templates","tts","local-first","html"]}}
 ---
