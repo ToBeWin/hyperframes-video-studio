@@ -1,0 +1,214 @@
+{
+  "product_launch": {
+    "name": "Product Launch",
+    "category": "business",
+    "best_for": "App, SaaS, tool, course, hardware, or plugin launches.",
+    "starter_questions": [
+      "What is the product name?",
+      "Who is it for?",
+      "What is the one-line promise?",
+      "Do you have a logo, screenshot, or product image?",
+      "Which platform: 16:9, 9:16, 1:1, or 4:5?"
+    ],
+    "resolution": {"width": 1920, "height": 1080},
+    "style": {"palette": ["#0B0F19", "#F8FAFC", "#22D3EE", "#A3E635"], "font": "Inter"},
+    "frames": [
+      {"id": "hook", "role": "hook", "duration": 3, "motion": "depth_push"},
+      {"id": "problem", "role": "problem", "duration": 4, "motion": "parallax_reveal"},
+      {"id": "solution", "role": "solution", "duration": 5, "motion": "3d_like_orbit"},
+      {"id": "feature_grid", "role": "feature_grid", "duration": 6, "motion": "staggered_cards"},
+      {"id": "cta", "role": "cta", "duration": 3, "motion": "logo_lockup"}
+    ]
+  },
+  "feature_demo": {
+    "name": "Feature Demo",
+    "category": "product",
+    "best_for": "Explaining one feature through steps, screenshots, and before-after clarity.",
+    "starter_questions": [
+      "Which feature should the video explain?",
+      "What problem does it solve?",
+      "What are the 3 main steps?",
+      "Do you have screenshots or screen recordings?",
+      "Should the tone be tutorial, launch, or sales?"
+    ],
+    "resolution": {"width": 1920, "height": 1080},
+    "style": {"palette": ["#101828", "#F2F4F7", "#2E90FA", "#12B76A"], "font": "Inter"},
+    "frames": [
+      {"id": "feature_title", "role": "title", "duration": 2.5, "motion": "clean_reveal"},
+      {"id": "pain_before", "role": "before_state", "duration": 4, "motion": "split_screen"},
+      {"id": "step_one", "role": "demo_step", "duration": 4, "motion": "cursor_path"},
+      {"id": "step_two", "role": "demo_step", "duration": 4, "motion": "screenshot_zoom"},
+      {"id": "result_after", "role": "after_state", "duration": 4, "motion": "comparison_wipe"},
+      {"id": "takeaway", "role": "takeaway", "duration": 3, "motion": "cta_lockup"}
+    ]
+  },
+  "data_story": {
+    "name": "Data Story",
+    "category": "analytics",
+    "best_for": "Reports, investor updates, KPI reviews, growth recaps, and dashboards.",
+    "starter_questions": [
+      "What is the data story about?",
+      "Give 3 to 5 key numbers.",
+      "Is the message growth, risk, opportunity, or recap?",
+      "Who is the audience: team, boss, client, or investor?",
+      "Do you need charts, KPI bars, or ranking lists?"
+    ],
+    "resolution": {"width": 1920, "height": 1080},
+    "style": {"palette": ["#111827", "#F9FAFB", "#38BDF8", "#F59E0B"], "font": "Inter"},
+    "frames": [
+      {"id": "headline_metric", "role": "headline_metric", "duration": 3, "motion": "count_up"},
+      {"id": "kpi_progress", "role": "kpi_progress", "duration": 5, "motion": "bar_fill"},
+      {"id": "chart_sequence", "role": "chart_sequence", "duration": 6, "motion": "axis_draw"},
+      {"id": "insight", "role": "insight", "duration": 4, "motion": "callout_focus"},
+      {"id": "summary", "role": "summary", "duration": 3, "motion": "ranked_list"}
+    ]
+  },
+  "minimalist_quote": {
+    "name": "Minimalist Quote",
+    "category": "social",
+    "best_for": "Cinematic quote videos, founder thoughts, poetic captions, and social posts.",
+    "starter_questions": [
+      "What quote should appear?",
+      "Who should be credited?",
+      "Should it feel calm, sharp, warm, or premium?",
+      "Which social platform is it for?",
+      "Do you want narration or text-only?"
+    ],
+    "resolution": {"width": 1080, "height": 1920},
+    "style": {"palette": ["#050505", "#F5F5F4", "#D4AF37"], "font": "Geist"},
+    "frames": [
+      {"id": "silence_open", "role": "silence_open", "duration": 2, "motion": "fade_in"},
+      {"id": "quote_part_1", "role": "quote_part_1", "duration": 4, "motion": "kinetic_type"},
+      {"id": "quote_part_2", "role": "quote_part_2", "duration": 4, "motion": "slow_tracking"},
+      {"id": "attribution", "role": "attribution", "duration": 3, "motion": "soft_lockup"}
+    ]
+  },
+  "explainer": {
+    "name": "Explainer",
+    "category": "education",
+    "best_for": "Concept explanations, process walkthroughs, industry ideas, and short lessons.",
+    "starter_questions": [
+      "What concept should be explained?",
+      "Who is the audience?",
+      "What are the 3 key points?",
+      "Should the style be friendly, expert, or energetic?",
+      "Do you need icons, flow diagrams, or examples?"
+    ],
+    "resolution": {"width": 1920, "height": 1080},
+    "style": {"palette": ["#0F172A", "#F8FAFC", "#06B6D4", "#F97316"], "font": "Inter"},
+    "frames": [
+      {"id": "question", "role": "question", "duration": 3, "motion": "title_pop"},
+      {"id": "definition", "role": "definition", "duration": 4, "motion": "diagram_build"},
+      {"id": "point_one", "role": "key_point", "duration": 4, "motion": "icon_reveal"},
+      {"id": "point_two", "role": "key_point", "duration": 4, "motion": "flow_step"},
+      {"id": "example", "role": "example", "duration": 5, "motion": "case_card"},
+      {"id": "recap", "role": "recap", "duration": 3, "motion": "three_bullets"}
+    ]
+  },
+  "before_after": {
+    "name": "Before / After",
+    "category": "conversion",
+    "best_for": "Showing transformation, redesign, performance gains, and workflow improvements.",
+    "starter_questions": [
+      "What changed from before to after?",
+      "What evidence or numbers prove it?",
+      "Do you have before and after images?",
+      "What is the biggest user benefit?",
+      "Should the video feel dramatic or practical?"
+    ],
+    "resolution": {"width": 1920, "height": 1080},
+    "style": {"palette": ["#18181B", "#FAFAFA", "#EF4444", "#22C55E"], "font": "Inter"},
+    "frames": [
+      {"id": "before_title", "role": "before_state", "duration": 3, "motion": "desaturate_in"},
+      {"id": "friction", "role": "pain_points", "duration": 4, "motion": "stacked_labels"},
+      {"id": "transition", "role": "transformation", "duration": 3, "motion": "slider_wipe"},
+      {"id": "after_title", "role": "after_state", "duration": 4, "motion": "color_restore"},
+      {"id": "proof", "role": "proof_metrics", "duration": 4, "motion": "number_lift"},
+      {"id": "closing", "role": "summary", "duration": 3, "motion": "benefit_lockup"}
+    ]
+  },
+  "customer_testimonial": {
+    "name": "Customer Testimonial",
+    "category": "sales",
+    "best_for": "Customer quotes, case studies, B2B proof, and trust-building clips.",
+    "starter_questions": [
+      "Who is the customer or company?",
+      "What quote should be featured?",
+      "What result did they get?",
+      "Do you have a logo, avatar, or photo?",
+      "Should it feel premium, warm, or enterprise?"
+    ],
+    "resolution": {"width": 1920, "height": 1080},
+    "style": {"palette": ["#111827", "#FFFFFF", "#60A5FA", "#34D399"], "font": "Inter"},
+    "frames": [
+      {"id": "customer_intro", "role": "customer_intro", "duration": 3, "motion": "logo_reveal"},
+      {"id": "quote", "role": "quote", "duration": 6, "motion": "typewriter_soft"},
+      {"id": "challenge", "role": "challenge", "duration": 4, "motion": "card_stack"},
+      {"id": "result", "role": "result_metric", "duration": 4, "motion": "count_up"},
+      {"id": "trust_close", "role": "trust_close", "duration": 3, "motion": "signature_lockup"}
+    ]
+  },
+  "event_promo": {
+    "name": "Event / Webinar Promo",
+    "category": "marketing",
+    "best_for": "Webinars, launches, online courses, meetups, and live events.",
+    "starter_questions": [
+      "What is the event name?",
+      "When and where is it?",
+      "Who are the speakers or hosts?",
+      "What will attendees learn?",
+      "What is the registration CTA?"
+    ],
+    "resolution": {"width": 1080, "height": 1920},
+    "style": {"palette": ["#020617", "#F8FAFC", "#C084FC", "#FACC15"], "font": "Inter"},
+    "frames": [
+      {"id": "event_hook", "role": "event_hook", "duration": 3, "motion": "spotlight_title"},
+      {"id": "speaker", "role": "speaker_intro", "duration": 4, "motion": "profile_slide"},
+      {"id": "agenda", "role": "agenda", "duration": 5, "motion": "timeline_build"},
+      {"id": "date_time", "role": "date_time", "duration": 3, "motion": "calendar_snap"},
+      {"id": "register", "role": "cta", "duration": 3, "motion": "cta_pulse"}
+    ]
+  },
+  "changelog": {
+    "name": "Product Changelog",
+    "category": "product",
+    "best_for": "Release notes, app updates, new features, and community update videos.",
+    "starter_questions": [
+      "What version or release is this?",
+      "List the top 3 updates.",
+      "Which update is most important?",
+      "Do you have screenshots or short demos?",
+      "Should the CTA be upgrade, try now, or read more?"
+    ],
+    "resolution": {"width": 1920, "height": 1080},
+    "style": {"palette": ["#0A0A0A", "#F4F4F5", "#22D3EE", "#A78BFA"], "font": "Inter"},
+    "frames": [
+      {"id": "version", "role": "version_title", "duration": 2.5, "motion": "terminal_blink"},
+      {"id": "update_one", "role": "update_item", "duration": 4, "motion": "feature_card"},
+      {"id": "update_two", "role": "update_item", "duration": 4, "motion": "feature_card"},
+      {"id": "update_three", "role": "update_item", "duration": 4, "motion": "feature_card"},
+      {"id": "availability", "role": "availability", "duration": 3, "motion": "release_badge"}
+    ]
+  },
+  "ecommerce_promo": {
+    "name": "E-commerce Promo",
+    "category": "commerce",
+    "best_for": "Product offers, seasonal sales, creator shops, and marketplace listings.",
+    "starter_questions": [
+      "What product is being promoted?",
+      "What is the offer or discount?",
+      "What are the top 3 selling points?",
+      "Do you have product photos?",
+      "Where should viewers buy?"
+    ],
+    "resolution": {"width": 1080, "height": 1920},
+    "style": {"palette": ["#141414", "#FFFFFF", "#FB7185", "#FDE047"], "font": "Inter"},
+    "frames": [
+      {"id": "product_hero", "role": "product_hero", "duration": 3, "motion": "hero_spin"},
+      {"id": "benefit_one", "role": "benefit", "duration": 3, "motion": "tag_pop"},
+      {"id": "benefit_two", "role": "benefit", "duration": 3, "motion": "tag_pop"},
+      {"id": "offer", "role": "offer", "duration": 4, "motion": "price_reveal"},
+      {"id": "buy_now", "role": "cta", "duration": 3, "motion": "button_lockup"}
+    ]
+  }
+}
